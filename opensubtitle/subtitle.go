@@ -90,31 +90,6 @@ func (s Subtitle) Download(path string) (err error) {
 		return
 	}
 	return nil
-	/*
-		data, err := base64.StdEncoding.DecodeString(r.Body)
-		if err != nil {
-			return
-		}
-
-		b := bytes.NewBuffer(data)
-
-		var r io.Reader
-		r, err = gzip.NewReader(b)
-		if err != nil {
-			return
-		}
-
-		var resB bytes.Buffer
-		_, err = resB.ReadFrom(r)
-		if err != nil {
-			return
-		}
-
-		resData := resB.Bytes()
-
-		fmt.Println(string(resData))
-		return nil
-	*/
 }
 
 func (s *Subtitles) ToMap() map[string]Subtitle {

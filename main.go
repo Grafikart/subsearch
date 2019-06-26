@@ -46,7 +46,7 @@ func search(cli *cli.Context) (err error) {
 		}
 		options := subtitles.ToMap()
 		prompt := &survey.Select{
-			Message: "Choose a color:",
+			Message: "Choose a subtitle (★, matched by file hash) :",
 			Options: getKeys(options),
 		}
 		v := ""
