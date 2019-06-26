@@ -39,14 +39,27 @@ func search(cli *cli.Context) (err error) {
 			return err
 		}
 		s.Start()
-		subtitles, err := c.SearchForFile(file)
+		subtitles, err := c.Search(file)
 		s.Stop()
 		if err != nil {
 			return err
 		}
+		survey.SelectQuestionTemplate = `
+{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
+{{- color "green+hb"}}{{ QuestionIcon }} {{color "reset"}}
+{{- color "default+hb"}}{{ .Message }}{{ .FilterMessage }}{{color "reset"}}
+{{- if .ShowAnswer}}{{color "cyan"}} {{.Answer}}{{color "reset"}}{{"\n"}}
+{{- else}}
+  {{- "\n"}}
+  {{- range $ix, $choice := .PageEntries}}
+	{{- if eq $ix $.SelectedIndex}}{{color "cyan+b"}}{{ SelectFocusIcon }} {{else}}{{color "default+hb"}}  {{end}}
+	{{- $choice}}
+	{{- color "reset"}}{{"\n"}}
+  {{- end}}
+{{- end}}`
 		options := subtitles.ToMap()
 		prompt := &survey.Select{
-			Message: "Choose a subtitle (★, matched by file hash) :",
+			Message: "Choose a file to download :",
 			Options: getKeys(options),
 		}
 		v := ""

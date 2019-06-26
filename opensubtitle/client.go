@@ -4,7 +4,9 @@ import (
 	"github.com/kolo/xmlrpc"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 )
 
 const (
@@ -16,7 +18,29 @@ type Client struct {
 	*xmlrpc.Client
 }
 
-func (c *Client) Login() (err error) {
+func (c *Client) Search(path string) (subtitles Subtitles, err error) {
+	var subsFromFile, subsFromName Subtitles
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		subsFromFile, err = c.searchFromFile(path)
+		defer wg.Done()
+	}()
+	go func() {
+		subsFromName, err = c.searchFromName(filepath.Base(path))
+		defer wg.Done()
+	}()
+
+	wg.Wait()
+
+	if err != nil {
+		return
+	}
+
+	return append(subsFromFile, subsFromName...), nil
+}
+
+func (c *Client) login() (err error) {
 	if c.Token != "" {
 		return nil
 	}
@@ -32,8 +56,8 @@ func (c *Client) Login() (err error) {
 	return nil
 }
 
-func (c *Client) SearchForFile(path string) (subtitles Subtitles, err error) {
-	if err := c.Login(); err != nil {
+func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
+	if err := c.login(); err != nil {
 		return nil, err
 	}
 	f, err := os.Open(path)
@@ -75,16 +99,13 @@ func (c *Client) SearchForFile(path string) (subtitles Subtitles, err error) {
 		}
 	}
 
-	subtitles, err = c.searchForName(fi.Name())
-
-	if err != nil {
-		return
-	}
-
-	return append(res.Data, subtitles...), nil
+	return subtitles, nil
 }
 
-func (c *Client) searchForName(name string) (subtitles Subtitles, err error) {
+func (c *Client) searchFromName(name string) (subtitles Subtitles, err error) {
+	if err := c.login(); err != nil {
+		return nil, err
+	}
 	params := []interface{}{
 		c.Token,
 		[]struct {
