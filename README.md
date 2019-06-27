@@ -1,6 +1,7 @@
 # :speech_balloon: subsearch
 
 [![Licence: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![Build Status](https://travis-ci.org/Grafikart/subsearch.svg?branch=master)](https://travis-ci.org/Grafikart/subsearch)
 
 A simple CLI Tool to searching and downloading subtitles for your files (using opensubtitles.org). I'm using this project to learn [Golang](https://golang.org/)
 

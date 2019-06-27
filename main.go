@@ -76,7 +76,7 @@ func search(cli *cli.Context) (err error) {
 	return nil
 }
 
-func getKeys(m map[string]opensubtitle.Subtitle) []string {
+func getKeys(m map[string]*opensubtitle.Subtitle) []string {
 	keys := make([]string, 0, len(m))
 	for key := range m {
 		keys = append(keys, key)

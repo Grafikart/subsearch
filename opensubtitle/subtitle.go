@@ -63,7 +63,7 @@ type Subtitle struct {
 
 type Subtitles []Subtitle
 
-func (s Subtitle) Download(path string) (err error) {
+func (s *Subtitle) Download(path string) (err error) {
 	resp, err := http.Get(s.SubDownloadLink)
 	if err != nil {
 		return
@@ -92,13 +92,13 @@ func (s Subtitle) Download(path string) (err error) {
 	return nil
 }
 
-func (s *Subtitles) ToMap() map[string]Subtitle {
-	options := make(map[string]Subtitle)
+func (s *Subtitles) ToMap() map[string]*Subtitle {
+	options := make(map[string]*Subtitle)
 	for _, sub := range *s {
 		if sub.MatchedBy == "moviehash" {
-			options["★"+sub.SubFileName] = sub
+			options["★ "+sub.SubFileName] = &sub
 		} else {
-			options[sub.SubFileName] = sub
+			options[sub.SubFileName] = &sub
 		}
 	}
 	return options
