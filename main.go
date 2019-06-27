@@ -2,12 +2,14 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Grafikart/subsearch/opensubtitle"
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/urfave/cli.v1"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -30,21 +32,33 @@ func search(cli *cli.Context) (err error) {
 		return errors.New("no paths found, use \"subsearch <path1> <path2>\"")
 	}
 	for _, file := range args {
-		c, err := opensubtitle.NewClient()
+		err := searchFile(file)
 		if err != nil {
-			return err
+			color.Red("Error: %s", err)
 		}
-		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		if err := s.Color("blue"); err != nil {
-			return err
-		}
-		s.Start()
-		subtitles, err := c.Search(file)
-		s.Stop()
-		if err != nil {
-			return err
-		}
-		survey.SelectQuestionTemplate = `
+	}
+	return nil
+}
+
+func searchFile(file string) (err error) {
+	c, err := opensubtitle.NewClient()
+	if err != nil {
+		return err
+	}
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	if err := s.Color("blue"); err != nil {
+		return err
+	}
+	s.Start()
+	subtitles, err := c.Search(file)
+	s.Stop()
+	if err != nil {
+		return err
+	}
+	if len(subtitles) == 0 {
+		return fmt.Errorf("No subtitles found for \"%s\"", filepath.Base(file))
+	}
+	survey.SelectQuestionTemplate = `
 {{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
 {{- color "green+hb"}}{{ QuestionIcon }} {{color "reset"}}
 {{- color "default+hb"}}{{ .Message }}{{ .FilterMessage }}{{color "reset"}}
@@ -57,21 +71,20 @@ func search(cli *cli.Context) (err error) {
 	{{- color "reset"}}{{"\n"}}
   {{- end}}
 {{- end}}`
-		options := subtitles.ToMap()
-		prompt := &survey.Select{
-			Message: "Choose a file to download :",
-			Options: getKeys(options),
-		}
-		v := ""
-		if err := survey.AskOne(prompt, &v, nil); err != nil {
-			return err
-		}
-		s.Start()
-		err = options[v].Download(file + ".srt")
-		s.Stop()
-		if err != nil {
-			return err
-		}
+	options := subtitles.ToMap()
+	prompt := &survey.Select{
+		Message: "Choose a file to download :",
+		Options: getKeys(options),
+	}
+	v := ""
+	if err := survey.AskOne(prompt, &v, nil); err != nil {
+		return err
+	}
+	s.Start()
+	err = options[v].Download(file + ".srt")
+	s.Stop()
+	if err != nil {
+		return err
 	}
 	return nil
 }

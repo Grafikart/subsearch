@@ -9,6 +9,8 @@ A simple CLI Tool to searching and downloading subtitles for your files (using o
 
 ![Demonstration](demo.svg)
 
+(Animated SVG doesn't work on github :()
+
 ## Usage
 
 ```bash
