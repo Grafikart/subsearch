@@ -3,6 +3,7 @@ package opensubtitle
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -92,14 +93,17 @@ func (s *Subtitle) Download(path string) (err error) {
 	return nil
 }
 
+func (s *Subtitle) String() string {
+	if s.MatchedBy == "moviehash" {
+		return "★ " + s.SubFileName
+	}
+	return s.SubFileName
+}
+
 func (s *Subtitles) ToMap() map[string]*Subtitle {
 	options := make(map[string]*Subtitle)
 	for _, sub := range *s {
-		if sub.MatchedBy == "moviehash" {
-			options["★ "+sub.SubFileName] = &sub
-		} else {
-			options[sub.SubFileName] = &sub
-		}
+		options[fmt.Sprint(s)] = &sub
 	}
 	return options
 }
