@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -11,11 +12,7 @@ const (
 	ChunkSize = 65536 // 64k
 )
 
-func HashFile(file *os.File) (h string, err error) {
-	fi, err := file.Stat()
-	if err != nil {
-		return
-	}
+func HashFile(file io.ReaderAt, fi os.FileInfo) (h string, err error) {
 	if fi.Size() < ChunkSize {
 		return "", fmt.Errorf("file is too small")
 	}
@@ -46,7 +43,7 @@ func HashFile(file *os.File) (h string, err error) {
 	return fmt.Sprintf("%016x", hash+uint64(fi.Size())), nil
 }
 
-func readChunk(file *os.File, offset int64, buf []byte) (err error) {
+func readChunk(file io.ReaderAt, offset int64, buf []byte) (err error) {
 	n, err := file.ReadAt(buf, offset)
 	if err != nil {
 		return

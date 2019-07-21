@@ -73,7 +73,7 @@ func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
 	if err != nil {
 		return
 	}
-	h, err := HashFile(f)
+	h, err := HashFile(f, fi)
 	if err != nil {
 		return
 	}
