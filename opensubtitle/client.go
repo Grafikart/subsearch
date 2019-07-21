@@ -18,6 +18,29 @@ type Client struct {
 	*xmlrpc.Client
 }
 
+type ClientFile struct {
+	*os.File
+}
+
+func (f ClientFile) Size() int64 {
+	fi, err := f.Stat()
+	if err != nil {
+		return 0
+	}
+	return fi.Size()
+}
+
+func NewClient() (*Client, error) {
+	rpc, err := xmlrpc.NewClient(endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	c := &Client{
+		Client: rpc,
+	}
+	return c, nil
+}
+
 func (c *Client) Search(path string) (subtitles Subtitles, err error) {
 	var subsFromFile, subsFromName Subtitles
 	var wg sync.WaitGroup
@@ -60,10 +83,11 @@ func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
 	if err := c.login(); err != nil {
 		return nil, err
 	}
-	f, err := os.Open(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return
 	}
+	f := ClientFile{file}
 	defer func() {
 		if err := f.Close(); err != nil {
 			log.Fatal(err)
@@ -73,7 +97,7 @@ func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
 	if err != nil {
 		return
 	}
-	h, err := HashFile(f, fi)
+	h, err := hashFile(f)
 	if err != nil {
 		return
 	}
@@ -125,15 +149,4 @@ func (c *Client) searchFromName(name string) (subtitles Subtitles, err error) {
 		}
 	}
 	return res.Data, nil
-}
-
-func NewClient() (*Client, error) {
-	rpc, err := xmlrpc.NewClient(endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	c := &Client{
-		Client: rpc,
-	}
-	return c, nil
 }

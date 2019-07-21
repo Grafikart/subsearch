@@ -17,7 +17,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "subsearch"
 	app.Usage = "Search subtitles for your files (using opensubtitles.org)"
-	app.Action = search
+	app.Action = searchAction
 	err := app.Run(os.Args)
 	if err != nil {
 		color.Red("Error: %s", err)
@@ -26,7 +26,7 @@ func main() {
 	os.Exit(0)
 }
 
-func search(cli *cli.Context) (err error) {
+func searchAction(cli *cli.Context) (err error) {
 	args := cli.Args()
 	if len(args) < 1 {
 		return errors.New("no paths found, use \"subsearch <path1> <path2>\"")
