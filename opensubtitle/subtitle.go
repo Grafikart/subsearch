@@ -3,7 +3,6 @@ package opensubtitle
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -103,7 +102,7 @@ func (s *Subtitle) String() string {
 func (s *Subtitles) ToMap() map[string]*Subtitle {
 	options := make(map[string]*Subtitle)
 	for _, sub := range *s {
-		options[fmt.Sprint(s)] = &sub
+		options[sub.String()] = &sub
 	}
 	return options
 }

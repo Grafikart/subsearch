@@ -99,7 +99,7 @@ func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
 		}
 	}
 
-	return subtitles, nil
+	return res.Data, nil
 }
 
 func (c *Client) searchFromName(name string) (subtitles Subtitles, err error) {
