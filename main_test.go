@@ -18,8 +18,8 @@ func EqualSlice(t *testing.T, a []string, b []string) {
 
 func TestGetKeys(t *testing.T) {
 	m := map[string]*opensubtitle.Subtitle{
-		"Key":  &opensubtitle.Subtitle{},
-		"Key2": &opensubtitle.Subtitle{},
+		"Key":  {},
+		"Key2": {},
 	}
 	k := getKeys(m)
 	EqualSlice(t, k, []string{"Key", "Key2"})
