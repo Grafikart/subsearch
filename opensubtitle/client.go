@@ -41,17 +41,26 @@ type Client struct {
 func (c *Client) Search(f File) (subtitles Subtitles, err error) {
 	var subsFromFile, subsFromName Subtitles
 	var wg sync.WaitGroup
+	var mux sync.Mutex
 	if err := c.login(); err != nil {
 		return nil, err
 	}
 	wg.Add(2)
 	go func() {
-		subsFromFile, err = c.searchFromFile(f)
-		defer wg.Done()
+		subtitles, e := c.searchFromFile(f)
+		mux.Lock()
+		subsFromFile = subtitles
+		err = e
+		wg.Done()
+		mux.Unlock()
 	}()
 	go func() {
-		subsFromName, err = c.searchFromName(filepath.Base(f.Name()))
-		defer wg.Done()
+		subtitles, e := c.searchFromName(filepath.Base(f.Name()))
+		mux.Lock()
+		subsFromName = subtitles
+		err = e
+		wg.Done()
+		mux.Unlock()
 	}()
 
 	wg.Wait()
