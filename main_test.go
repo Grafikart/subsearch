@@ -6,6 +6,7 @@ import (
 )
 
 func EqualSlice(t *testing.T, a []string, b []string) {
+	t.Helper()
 	if len(a) != len(b) {
 		t.Errorf("%v !== %v", a, b)
 	}
