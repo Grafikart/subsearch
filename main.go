@@ -26,6 +26,20 @@ func main() {
 	os.Exit(0)
 }
 
+const selectTemplate = `
+{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
+{{- color "green+hb"}}{{ QuestionIcon }} {{color "reset"}}
+{{- color "default+hb"}}{{ .Message }}{{ .FilterMessage }}{{color "reset"}}
+{{- if .ShowAnswer}}{{color "cyan"}} {{.Answer}}{{color "reset"}}{{"\n"}}
+{{- else}}
+  {{- "\n"}}
+  {{- range $ix, $choice := .PageEntries}}
+	{{- if eq $ix $.SelectedIndex}}{{color "cyan+b"}}{{ SelectFocusIcon }} {{else}}{{color "default+hb"}}  {{end}}
+	{{- $choice}}
+	{{- color "reset"}}{{"\n"}}
+  {{- end}}
+{{- end}}`
+
 func searchAction(cli *cli.Context) (err error) {
 	args := cli.Args()
 	if len(args) < 1 {
@@ -50,27 +64,20 @@ func searchFile(file string) (err error) {
 		return err
 	}
 	s.Start()
-	subtitles, err := c.Search(file)
+	f, err := os.Open(file)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	subtitles, err := c.Search(opensubtitle.ClientFile{f})
 	s.Stop()
 	if err != nil {
 		return err
 	}
 	if len(subtitles) == 0 {
-		return fmt.Errorf("No subtitles found for \"%s\"", filepath.Base(file))
+		return fmt.Errorf("no subtitles found for %q", filepath.Base(file))
 	}
-	survey.SelectQuestionTemplate = `
-{{- if .ShowHelp }}{{- color "cyan"}}{{ HelpIcon }} {{ .Help }}{{color "reset"}}{{"\n"}}{{end}}
-{{- color "green+hb"}}{{ QuestionIcon }} {{color "reset"}}
-{{- color "default+hb"}}{{ .Message }}{{ .FilterMessage }}{{color "reset"}}
-{{- if .ShowAnswer}}{{color "cyan"}} {{.Answer}}{{color "reset"}}{{"\n"}}
-{{- else}}
-  {{- "\n"}}
-  {{- range $ix, $choice := .PageEntries}}
-	{{- if eq $ix $.SelectedIndex}}{{color "cyan+b"}}{{ SelectFocusIcon }} {{else}}{{color "default+hb"}}  {{end}}
-	{{- $choice}}
-	{{- color "reset"}}{{"\n"}}
-  {{- end}}
-{{- end}}`
+	survey.SelectQuestionTemplate = selectTemplate
 	options := subtitles.ToMap()
 	prompt := &survey.Select{
 		Message: "Choose a file to download :",
@@ -81,7 +88,12 @@ func searchFile(file string) (err error) {
 		return err
 	}
 	s.Start()
-	err = options[v].Download(file + ".srt")
+	srt, err := os.Create(file + ".srt")
+	if err != nil {
+		return
+	}
+	defer srt.Close()
+	err = options[v].Download(srt)
 	s.Stop()
 	if err != nil {
 		return err

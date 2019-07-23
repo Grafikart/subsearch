@@ -2,10 +2,7 @@ package opensubtitle
 
 import (
 	"github.com/kolo/xmlrpc"
-	"log"
-	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 )
 
@@ -13,21 +10,16 @@ const (
 	endpoint = "https://api.opensubtitles.org:443/xml-rpc"
 )
 
-type Client struct {
-	Token string
-	*xmlrpc.Client
+type xmlRpcClient interface {
+	Call(method string, args interface{}, res interface{}) error
 }
 
-type ClientFile struct {
-	*os.File
+type loginResponse struct {
+	Token string `xmlrpc:"token"`
 }
 
-func (f ClientFile) Size() int64 {
-	fi, err := f.Stat()
-	if err != nil {
-		return 0
-	}
-	return fi.Size()
+type dataResponse struct {
+	Data Subtitles `xmlrpc:"data"`
 }
 
 func NewClient() (*Client, error) {
@@ -41,16 +33,24 @@ func NewClient() (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) Search(path string) (subtitles Subtitles, err error) {
+type Client struct {
+	Token  string
+	Client xmlRpcClient
+}
+
+func (c *Client) Search(f File) (subtitles Subtitles, err error) {
 	var subsFromFile, subsFromName Subtitles
 	var wg sync.WaitGroup
+	if err := c.login(); err != nil {
+		return nil, err
+	}
 	wg.Add(2)
 	go func() {
-		subsFromFile, err = c.searchFromFile(path)
+		subsFromFile, err = c.searchFromFile(f)
 		defer wg.Done()
 	}()
 	go func() {
-		subsFromName, err = c.searchFromName(filepath.Base(path))
+		subsFromName, err = c.searchFromName(filepath.Base(f.Name()))
 		defer wg.Done()
 	}()
 
@@ -67,9 +67,7 @@ func (c *Client) login() (err error) {
 	if c.Token != "" {
 		return nil
 	}
-	res := struct {
-		Token string `xmlrpc:"token"`
-	}{}
+	res := loginResponse{}
 	args := []interface{}{"", "", "en", "OpenSubtitlesPlayer v4.7"}
 	err = c.Client.Call("LogIn", args, &res)
 	if err != nil {
@@ -79,24 +77,7 @@ func (c *Client) login() (err error) {
 	return nil
 }
 
-func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
-	if err := c.login(); err != nil {
-		return nil, err
-	}
-	file, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	f := ClientFile{file}
-	defer func() {
-		if err := f.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	fi, err := f.Stat()
-	if err != nil {
-		return
-	}
+func (c *Client) searchFromFile(f File) (subtitles Subtitles, err error) {
 	h, err := hashFile(f)
 	if err != nil {
 		return
@@ -109,27 +90,20 @@ func (c *Client) searchFromFile(path string) (subtitles Subtitles, err error) {
 			Langs string `xmlrpc:"sublanguageid"`
 		}{{
 			h,
-			fi.Size(),
+			f.Size(),
 			"eng",
 		}},
 	}
-	res := struct {
-		Data Subtitles `xmlrpc:"data"`
-	}{}
+	res := dataResponse{}
 
-	if err := c.Call("SearchSubtitles", params, &res); err != nil {
-		if strings.Contains(err.Error(), "type mismatch") {
-			return nil, err
-		}
+	if err := c.Client.Call("SearchSubtitles", params, &res); err != nil {
+		return nil, err
 	}
 
 	return res.Data, nil
 }
 
 func (c *Client) searchFromName(name string) (subtitles Subtitles, err error) {
-	if err := c.login(); err != nil {
-		return nil, err
-	}
 	params := []interface{}{
 		c.Token,
 		[]struct {
@@ -140,13 +114,9 @@ func (c *Client) searchFromName(name string) (subtitles Subtitles, err error) {
 			"eng",
 		}},
 	}
-	res := struct {
-		Data Subtitles `xmlrpc:"data"`
-	}{}
-	if err := c.Call("SearchSubtitles", params, &res); err != nil {
-		if strings.Contains(err.Error(), "type mismatch") {
-			return nil, err
-		}
+	res := dataResponse{}
+	if err := c.Client.Call("SearchSubtitles", params, &res); err != nil {
+		return nil, err
 	}
 	return res.Data, nil
 }

@@ -5,11 +5,30 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"os"
 )
 
 const (
 	ChunkSize = 65536 // 64k
 )
+
+type File interface {
+	io.ReaderAt
+	Name() string
+	Size() int64
+}
+
+type ClientFile struct {
+	*os.File
+}
+
+func (f ClientFile) Size() int64 {
+	fi, err := f.Stat()
+	if err != nil {
+		return 0
+	}
+	return fi.Size()
+}
 
 type hashableFile interface {
 	io.ReaderAt

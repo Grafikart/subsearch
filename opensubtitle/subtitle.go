@@ -3,9 +3,9 @@ package opensubtitle
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
-	"os"
 )
 
 type Subtitle struct {
@@ -63,31 +63,27 @@ type Subtitle struct {
 
 type Subtitles []Subtitle
 
-func (s *Subtitle) Download(path string) (err error) {
+func (s *Subtitle) Download(f io.Writer) (err error) {
 	resp, err := http.Get(s.SubDownloadLink)
 	if err != nil {
-		return
+		return fmt.Errorf("can't reach the file %q, %v", s.SubDownloadLink, err)
 	}
 
 	var r io.Reader
 	r, err = gzip.NewReader(resp.Body)
 	if err != nil {
-		return
+		return fmt.Errorf("can't read gzip body, %v", err)
 	}
 
 	var resB bytes.Buffer
 	_, err = resB.ReadFrom(r)
 	if err != nil {
-		return
+		return fmt.Errorf("can't read from buffer, %v", err)
 	}
 
-	f, err := os.Create(path)
-	if err != nil {
-		return
-	}
 	_, err = f.Write(resB.Bytes())
 	if err != nil {
-		return
+		return fmt.Errorf("can't write data, %v", err)
 	}
 	return nil
 }

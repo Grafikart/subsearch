@@ -33,7 +33,7 @@ func TestHashFile(t *testing.T) {
 	})
 }
 
-func genStringReader(s string) hashableFile {
+func genStringReader(s string) *strings.Reader {
 	for len(s) <= ChunkSize {
 		s += s
 	}
