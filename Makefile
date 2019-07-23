@@ -4,5 +4,5 @@ install:
 
 .PHONY: test
 test:
-	go test ./... -race -coverprofile cover.out
+	GO111MODULE=on go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 	go tool cover -html=cover.out -o cover.html
